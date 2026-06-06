@@ -1,18 +1,35 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
+// Read prompt safely from the public assets directory
+function getSystemInstruction() {
+  try {
+    const filePath = path.join(process.cwd(), "public", "assets", "prompt.txt");
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, "utf-8");
+    }
+  } catch (error) {
+    console.error("Failed to parse prompt.txt file asset:", error);
+  }
+  // Fallback safety prompt instructions
+  return "You are an expert Kodular extension and screen generator layout engine.";
+}
+
 async function tryChatSession(modelName, message, history) {
   if (!ai) throw new Error("GEMINI_API_KEY is missing.");
 
-  // Inject a lightweight system instruction to enforce clean markdown responses
+  const systemPrompt = getSystemInstruction();
+
   const chat = ai.chats.create({
     model: modelName,
     config: { 
-      maxOutputTokens: 1500,
-      systemInstruction: "You are a premium AI assistant. Always format your responses using clean, structured Markdown. Use bolding, lists, and code blocks where appropriate to make information highly readable."
+      maxOutputTokens: 2500,
+      systemInstruction: systemPrompt
     },
     history: history || []
   });
@@ -41,7 +58,7 @@ export async function POST(req) {
         try {
           result = await tryChatSession("gemini-2.5-pro", message, history);
         } catch (proError) {
-          if (proError.message?.includes("429") || proError.status === 429 || proError.message?.includes("quota")) {
+          if (proError.message?.includes("429") || proError.status === 429 || proError.rawError === "RATE_LIMIT_EXHAUSTED") {
             return NextResponse.json({ error: "RATE_LIMIT_EXHAUSTED" }, { status: 429 });
           }
           throw proError;
