@@ -1,4 +1,6 @@
 import "./globals.css";
+// 1. Import the analytics initialization component
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
   title: "Kodular Craft AI — Prompt to Mobile App Screens Instantly",
@@ -12,7 +14,7 @@ export const metadata = {
     siteName: "Kodular Craft AI",
     images: [
       {
-        url: "/assets/og-image.png", // Placed within public/assets/
+        url: "/assets/og-image.png",
         width: 1200,
         height: 630,
         alt: "Kodular Craft AI Dashboard Interface Preview",
@@ -34,6 +36,8 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="antialiased selection:bg-indigo-500/30">
         {children}
+        {/* 2. Place the component right here inside the body tree */}
+        <Analytics />
       </body>
     </html>
   );
